@@ -1,0 +1,2 @@
+# LDAPdesk
+Desk for OpenLDAP
