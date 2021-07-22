@@ -1,0 +1,31 @@
+<div class="shadow-lg" style="margin-top: 25px; margin-left: 20px;">
+    <div id="ldapTree"></div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function(){
+        if (document.getElementById("logout")) {
+            $.get("/tree",
+            function(data) {
+                $("#ldapTree").treeview({
+                    data: data,
+                });
+                $.get("/get?dn=" + data[0].text,
+                function(data) {
+                    var obj_attributes = ''
+                    for(var key in data.attributes) {
+                        obj_attributes = obj_attributes + '\n' + key + ":" + data.attributes[key];
+                    };
+                    $("#objectDn").text('DN: ' + data.dn);
+                    $("#objectAttributes").text(obj_attributes);
+                });
+            });
+        };
+    });
+<!--    $()-->
+<!--    function getDetail(){-->
+<!--        var url = this.attr("href")-->
+<!--        $.get(-->
+<!--        function(data) {-->
+<!--        });-->
+<!--    };-->
+</script>

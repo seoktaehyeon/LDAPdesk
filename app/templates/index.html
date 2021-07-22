@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'component/head.html' %}
+<body class="bg-light">
+<div class="container col-12">
+    <div class="row">
+        {% include 'component/header.html' %}
+    </div>
+    <div class="row">
+        <div class="container col-12">
+            <div class="row">
+                <div class="col-3">
+                    {% include 'component/aside.html' %}
+                </div>
+                <div class="col-8">
+                    {% include 'component/main.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        {% include 'component/footer.html' %}
+    </div>
+</div>
+</body>
+</html>

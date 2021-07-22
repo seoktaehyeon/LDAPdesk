@@ -1,0 +1,14 @@
+.glyphicon {
+     display: inline-block;
+     height: 16px;
+     background-size: contain;
+}
+.glyphicon-minus {
+     background: url('/static/icons/zoom-out.svg') no-repeat center;
+}
+.glyphicon-plus {
+     background: url('/static/icons/zoom-in.svg') no-repeat center;
+}
+.glyphicon-user {
+     background: url('/static/icons/person.svg') no-repeat center;
+}
