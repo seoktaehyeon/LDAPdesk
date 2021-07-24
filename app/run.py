@@ -99,7 +99,7 @@ def list_object():
 
 @app.route('/tree', methods=["GET"])
 def list_tree():
-    _tree = list()
+    node_tree = list()
     try:
         with LdapCtl(
                 ldap_host=os.getenv('LDAP_SERVER_HOST'),
@@ -114,25 +114,31 @@ def list_tree():
             logging.debug('LDAP tree: %s' % ldap_tree)
     except Exception as e:
         logging.error(e)
-        return _tree
+        return jsonify(node_tree)
 
-    def dict_to_tree(node_tree, ldap_tree_dict):
-        tree_level = 0
-        for key, value in ldap_tree_dict.items():
+    # Internal function
+    def _ldap_tree_to_node_tree(_node_tree, _ldap_tree):
+        _node_level = 0
+        for key, value in _ldap_tree.items():
             logging.debug('Append %s' % key)
-            node_tree.append({
+            _node_tree.append({
                 'text': key.split(',')[0],
                 'href': 'javascript:getObject("%s")' % key,
             })
+            value_len = len(value)
+            logging.debug('Value length is %s : %s' % (value_len, value))
             if value:
-                node_tree[tree_level]['nodes'] = list()
-                node_tree[tree_level]['tags'] = [str(len(value))]
-                dict_to_tree(node_tree=node_tree[tree_level]['nodes'], ldap_tree_dict=value)
-                tree_level += 1
+                _node_tree[_node_level]['nodes'] = list()
+                _node_tree[_node_level]['tags'] = [str(value_len)]
+                _ldap_tree_to_node_tree(
+                    _node_tree=_node_tree[_node_level]['nodes'],
+                    _ldap_tree=value
+                )
+            _node_level += 1
 
-    dict_to_tree(node_tree=_tree, ldap_tree_dict=ldap_tree)
-    logging.debug('LDAP desk tree : %s' % _tree)
-    return jsonify(_tree)
+    _ldap_tree_to_node_tree(_node_tree=node_tree, _ldap_tree=ldap_tree)
+    logging.debug('Node tree : %s' % node_tree)
+    return jsonify(node_tree)
 
 
 @app.route('/get', methods=["GET"])
