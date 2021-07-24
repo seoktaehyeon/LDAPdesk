@@ -1,14 +1,22 @@
 .glyphicon {
      display: inline-block;
-     height: 16px;
+     height: 12px;
      background-size: contain;
 }
 .glyphicon-minus {
-     background: url('/static/icons/zoom-out.svg') no-repeat center;
+     background: url('/static/icons/caret-down-fill.svg') no-repeat center;
 }
 .glyphicon-plus {
-     background: url('/static/icons/zoom-in.svg') no-repeat center;
+     background: url('/static/icons/caret-right-fill.svg') no-repeat center;
 }
 .glyphicon-user {
      background: url('/static/icons/person.svg') no-repeat center;
+}
+span.badge {
+     color: #fff;
+     background-color: #6c757d;
+     padding-right: .6em;
+     padding-left: .6em;
+     border-radius: 10rem;
+     margin-left: 15px;
 }
