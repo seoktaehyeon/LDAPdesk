@@ -59,26 +59,30 @@ class LdapCtl(object):
         logging.debug('Complete to list entries')
         for ldap_entry in self.ldap_conn.entries:
             self.ldap_entries.append(json.loads(ldap_entry.entry_to_json()))
-            # self.ldap_entries.append(ldap_entry)
         logging.debug('LDAP entries : %s' % self.ldap_entries)
         return True
 
     def tree_object(self, node_parent_dn=None, node_parent_path=None):
+        # node_parent_dn and node_parent_path is required
+        # if empty will be defined as root level
         if node_parent_dn is None:
             logging.debug('Start to tree LDAP object: %s' % self.ldap_base)
             node_parent_dn = self.ldap_base
         if node_parent_path is None:
             self.ldap_tree[node_parent_dn] = dict()
             node_parent_path = self.ldap_tree[node_parent_dn]
+        # Start to parse entries, the first one should be domain, skip it
         for node in self.ldap_entries[1:]:
             node_dn = node['dn']
-            if node_dn.endswith(node_parent_dn):
+            # Check node dn if it ends with parent node dn, this node will be parsed
+            if node_dn not in node_parent_dn and node_dn.endswith(node_parent_dn):
+                logging.debug('%s ends with %s' % (node_dn, node_parent_dn))
                 node_dn_prefix = node_dn.replace(',%s' % node_parent_dn, '').split(',')
                 logging.debug('Node DN prefix : %s' % node_dn_prefix)
                 if len(node_dn_prefix) == 1:
                     node_parent_path[node_dn] = {}
                     logging.debug('Success to add %s into tree' % node_dn)
-                elif len(node_dn_prefix) != 0:
+                elif len(node_dn_prefix) > 1:
                     _node_parent_dn = '%s,%s' % (node_dn_prefix[-1], node_parent_dn)
                     if _node_parent_dn not in node_parent_path.keys():
                         node_parent_path[_node_parent_dn] = {}

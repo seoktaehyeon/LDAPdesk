@@ -9,6 +9,9 @@
 [![Bootstrap](https://img.shields.io/static/v1?style=for-the-badge&logo=bootstrap&label=bootstrap&message=4.6&color=6e48aa)](https://v4.bootcss.com/docs/getting-started/introduction/)
 [![LDAPdesk](https://img.shields.io/static/v1?style=for-the-badge&logo=docker&label=docker&message=bxwill/ldapdesk&color=2496ED)](https://hub.docker.com/r/bxwill/ldapdesk)
 
+#### Screenshot
+![](app/static/img/LDAPdesk_Login.png)
+
 #### Environment Variable Default Value
 
 ```text

@@ -73,7 +73,7 @@ def logout():
     return render_template(
         template_name_or_list='login.html',
         rsp_data={
-            'domain': os.getenv('LDAP_SERVER_DOMAIN'),
+            'ldap_domain': os.getenv('LDAP_SERVER_DOMAIN'),
         }
     )
 
@@ -121,12 +121,12 @@ def list_tree():
         for key, value in ldap_tree_dict.items():
             logging.debug('Append %s' % key)
             node_tree.append({
-                'text': key,
-                'enableLinks': True,
-                'href': '/get?dn=%s' % key,
+                'text': key.split(',')[0],
+                'href': 'javascript:getObject("%s")' % key,
             })
             if value:
                 node_tree[tree_level]['nodes'] = list()
+                node_tree[tree_level]['tags'] = [str(len(value))]
                 dict_to_tree(node_tree=node_tree[tree_level]['nodes'], ldap_tree_dict=value)
                 tree_level += 1
 
