@@ -2,30 +2,51 @@
     <div id="ldapTree"></div>
 </div>
 <script type="text/javascript">
-    $(document).ready(function(){
+    function getObject(object_dn) {
+        $.get(
+            "/get?dn=" + object_dn,
+            function (data, status) {
+                console.log('Data DN is ' + data.dn);
+                console.log('Data Attributes is ' + data.attributes);
+                // console.log('Status should be success');
+                if(data.dn == undefined) {
+                    // console.log('Status is ' + status);
+                    $("#notification").toast("show");
+                    return false;
+                };
+                $("#objectName").text(data.dn.split(",")[0].split("=")[1]);
+                $("#objectDn").text('Distinguished Name: ' + data.dn);
+                $("#objectAttributes").text('');
+                for (var key in data.attributes) {
+                    console.log(key);
+                    console.log(data.attributes[key]);
+                    $("#objectAttributes").append(
+                        '<div class="form-group row">' +
+                        '  <label for="' + key + '" class="col-sm-2 col-form-label">' + key + '</label>' +
+                        '  <div class="col-sm-10">' +
+                        '    <input type="text" class="col-sm-10" id="' + key + '" value="' + data.attributes[key] + '">' +
+                        '  </div>' +
+                        '</div>'
+                    );
+                };
+            }
+        );
+        return true;
+    };
+    $(document).ready(function () {
         if (document.getElementById("logout")) {
             $.get("/tree",
-            function(data) {
-                $("#ldapTree").treeview({
-                    data: data,
-                });
-                $.get("/get?dn=" + data[0].text,
-                function(data) {
-                    var obj_attributes = ''
-                    for(var key in data.attributes) {
-                        obj_attributes = obj_attributes + '\n' + key + ":" + data.attributes[key];
-                    };
-                    $("#objectDn").text('DN: ' + data.dn);
-                    $("#objectAttributes").text(obj_attributes);
-                });
-            });
+                function (data) {
+                    $("#ldapTree").treeview({
+                        data: data,
+                        enableLinks: true,
+                        showBorder: false,
+                        showTags: true,
+                    });
+                    var obj_dn = data[0].href.split('"')[1];
+                    getObject(object_dn = obj_dn);
+                }
+            )
         };
     });
-<!--    $()-->
-<!--    function getDetail(){-->
-<!--        var url = this.attr("href")-->
-<!--        $.get(-->
-<!--        function(data) {-->
-<!--        });-->
-<!--    };-->
 </script>
