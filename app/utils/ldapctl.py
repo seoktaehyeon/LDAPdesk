@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import ldap3
-from ldap3 import Server, Connection
+from ldap3 import Server, Connection, MODIFY_REPLACE
 import json
 import logging
 
@@ -41,14 +41,29 @@ class LdapCtl(object):
         self.logout()
 
     def login(self):
+        """
+        Login LDAP
+        :return:
+        """
+        logging.debug('%s login' % self.whoami)
         assert self.whoami == 'dn:%s' % self.ldap_user_dn, '%s != dn:%s' % (self.whoami, self.ldap_user_dn)
-        logging.debug('Login success %s' % self.whoami)
+        return True
 
     def logout(self):
-        self.ldap_conn.unbind()
+        """
+        Logout LDAP
+        :return:
+        """
         logging.debug('%s logout' % self.whoami)
+        self.ldap_conn.unbind()
+        return True
 
     def list_object(self, ldap_filter='(objectClass=*)'):
+        """
+        List all objects
+        :param ldap_filter:
+        :return:
+        """
         logging.debug('Start to list LDAP entries : %s %s' % (self.ldap_base, ldap_filter))
         self.ldap_entries = []
         self.ldap_conn.search(
@@ -92,7 +107,7 @@ class LdapCtl(object):
         return True
 
     def get_object(self, search_base, search_filter='(objectClass=*)'):
-        logging.debug('Get LDAP object: %s %s' % (search_base, search_filter))
+        logging.debug('Get object: %s %s' % (search_base, search_filter))
         self.ldap_conn.search(
             search_base=search_base,
             search_filter=search_filter,
@@ -104,25 +119,77 @@ class LdapCtl(object):
         logging.debug('Object detail : %s' % object_detail)
         return object_detail
 
-    def add_user(self, cn, object_class=None, attributes=None, controls=None):
-        self.ldap_conn.add(
-            dn='cn=%s,%s' % (cn, self.ldap_base),
-            object_class=object_class if object_class else ['inetOrgPerson', 'top'],
-            attributes=attributes if attributes else {
-                'sn': cn,
-                'uid': cn
-            },
-            controls=controls
+    def update_object(self, dn, attributes):
+        attributes_change = dict()
+        for attr_key, attr_value in attributes.items():
+            attributes_change[attr_key] = [(
+                MODIFY_REPLACE, [attr_value]
+            )]
+        self.ldap_conn.modify(
+            dn=dn,
+            changes=attributes_change
         )
         assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
+        return True
+
+    def rename_object(self, dn, relative_dn):
+        logging.debug('Rename %s to %s' % (dn, relative_dn))
+        self.ldap_conn.modify_dn(dn=dn, relative_dn=relative_dn, delete_old_dn=True, new_superior=None)
+        assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
+        return True
+
+    def add_object(self, dn, object_class, attributes):
+        logging.debug('Add new object: %s' % dn)
+        self.ldap_conn.add(
+            dn=dn,
+            object_class=object_class,
+            attributes=attributes
+        )
+        assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
+        return True
+
+    def delete_object(self, dn):
+        logging.debug('Delete new user: %s' % dn)
+        self.ldap_conn.delete(dn=dn)
+        assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
+        return True
+
+    def add_user(self, obj_dn, obj_class=None, obj_attr=None):
+        logging.debug('Add new user: %s' % obj_dn)
+        obj_cn = obj_dn.split(',')[0].split('=')[1]
+        obj_class = obj_class if obj_class else [
+            'top',
+            'inetOrgPerson'
+        ]
+        obj_attr = obj_attr if obj_attr else {
+            'sn': obj_cn,
+            'uid': obj_cn
+        }
+        return self.add_object(dn=obj_dn, object_class=obj_class, attributes=obj_attr)
+
+    def add_group(self, obj_dn, obj_class=None, obj_attr=None):
+        logging.debug('Add new group : %s' % obj_dn)
+        obj_class = obj_class if obj_class else [
+            'top',
+            'groupOfUniqueNames'
+        ]
+        obj_attr = obj_attr if obj_attr else {
+            'uniqueMember': [],
+        }
+        return self.add_object(dn=obj_dn, object_class=obj_class, attributes=obj_attr)
+
+    def move_object(self, obj_dn, target_parent_obj_dn):
+        logging.debug('Move %s to %s' % (obj_dn, target_parent_obj_dn))
+        obj_info = self.get_object(search_base=obj_dn)
+        self.add_object(
+            dn='%s,%s' % (obj_dn.split(',')[0], target_parent_obj_dn),
+            object_class=obj_info['attributes'].get('objectClass'),
+            attributes=obj_info['attributes']
+        )
+        self.delete_object(dn=obj_dn)
         return True
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='[ %(asctime)s ] %(levelname)s %(message)s')
     print('This is LDAP ctl scripts')
-    print('DEBUG')
-    from pprint import pprint
-    with LdapCtl(ldap_domain='qualitysphere.github.io', ldap_user='admin', ldap_pass='opendevops') as ldap_ctl:
-        obj = ldap_ctl.get_object(search_base='dc=qualitysphere,dc=github,dc=io', search_filter='(objectClass=*)')
-        pprint(obj)

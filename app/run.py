@@ -13,7 +13,6 @@ import random
 # logging.basicConfig(level=logging.INFO, format='[ %(asctime)s ] %(levelname)s %(message)s')
 logging.basicConfig(level=logging.DEBUG, format='[ %(asctime)s ] %(levelname)s %(message)s')
 
-
 app = Flask(__name__)
 
 
@@ -143,7 +142,13 @@ def list_tree():
 
 @app.route('/get', methods=["GET"])
 def get_object():
-    _detail = dict()
+    """
+
+    :return:
+    """
+    obj_detail = dict()
+    obj_dn = request.args.get('dn')
+    logging.info('%s get object %s' % (session.get('ldap_username'), obj_dn))
     try:
         with LdapCtl(
                 ldap_host=os.getenv('LDAP_SERVER_HOST'),
@@ -152,25 +157,103 @@ def get_object():
                 ldap_user=session.get('ldap_username'),
                 ldap_pass=session.get('ldap_password')
         ) as ldap_ctl:
-            _detail = ldap_ctl.get_object(search_base=request.args.get('dn'))
+            obj_detail = ldap_ctl.get_object(search_base=obj_dn)
     except Exception as e:
         logging.error(e)
-    return jsonify(_detail)
+    return jsonify(obj_detail)
 
 
 @app.route('/add', methods=["POST"])
 def add_object():
-    pass
+    obj_dn = request.form.get('dn')
+    obj_class = request.form.get('objectClass')
+    obj_attr = request.form.get('attributes')
+    obj_detail = dict()
+    logging.info('%s add new object %s' % (session.get('ldap_username'), obj_dn))
+    try:
+        with LdapCtl(
+                ldap_host=os.getenv('LDAP_SERVER_HOST'),
+                ldap_port=int(os.getenv('LDAP_SERVER_PORT')),
+                ldap_domain=os.getenv('LDAP_SERVER_DOMAIN'),
+                ldap_user=session.get('ldap_username'),
+                ldap_pass=session.get('ldap_password')
+        ) as ldap_ctl:
+            ldap_ctl.add_object(
+                dn=obj_dn,
+                object_class=obj_class,
+                attributes=obj_attr
+            )
+            obj_detail = ldap_ctl.get_object(search_base=obj_dn)
+    except Exception as e:
+        logging.error(e)
+    return jsonify(obj_detail)
 
 
 @app.route('/update', methods=["POST"])
 def update_object():
-    pass
+    obj_dn = request.form.get('dn')
+    obj_attr = request.form.get('attributes')
+    obj_detail = dict()
+    logging.info('%s update object %s' % (session.get('ldap_username'), obj_dn))
+    try:
+        with LdapCtl(
+                ldap_host=os.getenv('LDAP_SERVER_HOST'),
+                ldap_port=int(os.getenv('LDAP_SERVER_PORT')),
+                ldap_domain=os.getenv('LDAP_SERVER_DOMAIN'),
+                ldap_user=session.get('ldap_username'),
+                ldap_pass=session.get('ldap_password')
+        ) as ldap_ctl:
+            ldap_ctl.update_object(
+                dn=obj_dn,
+                attributes=obj_attr
+            )
+            obj_detail = ldap_ctl.get_object(search_base=obj_dn)
+    except Exception as e:
+        logging.error(e)
+    return jsonify(obj_detail)
 
 
 @app.route('/delete', methods=["POST"])
 def delete_object():
-    pass
+    obj_dn = request.form.get('dn')
+    logging.info('%s delete object %s' % (session.get('ldap_username'), obj_dn))
+    try:
+        with LdapCtl(
+                ldap_host=os.getenv('LDAP_SERVER_HOST'),
+                ldap_port=int(os.getenv('LDAP_SERVER_PORT')),
+                ldap_domain=os.getenv('LDAP_SERVER_DOMAIN'),
+                ldap_user=session.get('ldap_username'),
+                ldap_pass=session.get('ldap_password')
+        ) as ldap_ctl:
+            ldap_ctl.delete_object(dn=obj_dn)
+    except Exception as e:
+        logging.error(e)
+    return True
+
+
+@app.route('/move', methods=["POST"])
+def move_object():
+    obj_dn = request.form.get('dn')
+    obj_cn = obj_dn.split(',')[0]
+    target_parent_dn = request.form.get('target_parent_dn')
+    obj_detail = dict()
+    logging.info('%s move object %s to %s' % (session.get('ldap_username'), obj_dn, target_parent_dn))
+    try:
+        with LdapCtl(
+                ldap_host=os.getenv('LDAP_SERVER_HOST'),
+                ldap_port=int(os.getenv('LDAP_SERVER_PORT')),
+                ldap_domain=os.getenv('LDAP_SERVER_DOMAIN'),
+                ldap_user=session.get('ldap_username'),
+                ldap_pass=session.get('ldap_password')
+        ) as ldap_ctl:
+            ldap_ctl.move_object(
+                obj_dn=obj_dn,
+                target_parent_obj_dn=target_parent_dn
+            )
+            obj_detail = ldap_ctl.get_object(search_base='%s,%s' % (obj_cn, target_parent_dn))
+    except Exception as e:
+        logging.error(e)
+    return jsonify(obj_detail)
 
 
 if __name__ == '__main__':

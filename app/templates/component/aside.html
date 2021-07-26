@@ -22,10 +22,8 @@
                     console.log(data.attributes[key]);
                     $("#objectAttributes").append(
                         '<div class="form-group row">' +
-                        '  <label for="' + key + '" class="col-sm-2 col-form-label">' + key + '</label>' +
-                        '  <div class="col-sm-10">' +
-                        '    <input type="text" class="col-sm-10" id="' + key + '" value="' + data.attributes[key] + '">' +
-                        '  </div>' +
+                        '  <label for="' + key + '" class="col-form-label col-sm-2">' + key + '</label>' +
+                        '  <input type="text" class="form-control col-sm-8" id="' + key + '" value="' + data.attributes[key] + '">' +
                         '</div>'
                     );
                 };
