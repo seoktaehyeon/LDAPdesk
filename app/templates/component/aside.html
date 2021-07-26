@@ -1,4 +1,15 @@
 <div class="shadow-lg" style="margin-top: 25px; margin-left: 20px;">
+    <div style="padding: 20px;">
+        <span>
+            <img src="/static/icons/person-circle.svg"> {{rsp_data.ldap_username}}
+        </span>
+        <a id="refresh" class="btn btn-outline-dark btn-sm" href="/">
+            <img src="/static/icons/arrow-clockwise.svg"> Refresh
+        </a>
+        <a id="logout" class="btn btn-outline-dark btn-sm" href="/logout">
+            <img src="/static/icons/door-open.svg"> Logout
+        </a>
+    </div>
     <div id="ldapTree"></div>
 </div>
 <script type="text/javascript">
@@ -32,19 +43,17 @@
         return true;
     };
     $(document).ready(function () {
-        if (document.getElementById("logout")) {
-            $.get("/tree",
-                function (data) {
-                    $("#ldapTree").treeview({
-                        data: data,
-                        enableLinks: true,
-                        showBorder: false,
-                        showTags: true,
-                    });
-                    var obj_dn = data[0].href.split('"')[1];
-                    getObject(object_dn = obj_dn);
-                }
-            )
-        };
+        $.get("/tree",
+            function (data) {
+                $("#ldapTree").treeview({
+                    data: data,
+                    enableLinks: true,
+                    showBorder: false,
+                    showTags: true,
+                });
+                var obj_dn = data[0].href.split('"')[1];
+                getObject(object_dn = obj_dn);
+            }
+        )
     });
 </script>
