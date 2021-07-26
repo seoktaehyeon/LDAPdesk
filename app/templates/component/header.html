@@ -7,12 +7,8 @@
         <div class="row">
             <form class="form-inline my-2 my-lg-0">
                 <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-light my-2 my-sm-0" type="submit">Search</button>
+                <button class="btn btn-outline-light my-2 my-sm-0" type="submit" disabled>Search</button>
             </form>
-            {% if rsp_data.ldap_username %}
-            <a class="btn btn-primary my-2 my-sm-0" href="/logout" style="margin-left: 20px;" id="logout">{{
-                rsp_data.ldap_username }} Logout</a>
-            {% endif %}
         </div>
     </div>
 </nav>
