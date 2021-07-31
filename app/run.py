@@ -10,10 +10,38 @@ import os
 import logging
 import random
 
-# logging.basicConfig(level=logging.INFO, format='[ %(asctime)s ] %(levelname)s %(message)s')
-logging.basicConfig(level=logging.DEBUG, format='[ %(asctime)s ] %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO, format='[ %(asctime)s ] %(levelname)s %(message)s')
+# logging.basicConfig(level=logging.DEBUG, format='[ %(asctime)s ] %(levelname)s %(message)s')
 
 app = Flask(__name__)
+
+
+def isLdapAattribute(attr_name):
+    attr_list = [
+        "objectClass",
+        "gidNumber",
+        "cn",
+        "sn",
+        "uid",
+        "displayName",
+        "email",
+        "userPassword",
+        "ou",
+        "description",
+        "uniqueMember",
+    ]
+    return True if attr_name in attr_list else False
+
+
+def formatLdapAttributes(attr_dict):
+    formatted_attrs = dict()
+    for attr_k, attr_v in attr_dict.items():
+        if isLdapAattribute(attr_k):
+            logging.debug('Found attribute %s in form' % attr_k)
+            formatted_attrs[attr_k] = attr_v.split(',')
+    logging.debug('Formatted attributes: %s' % formatted_attrs)
+    return formatted_attrs
+
 
 
 @app.route('/', methods=["GET"])
@@ -26,7 +54,7 @@ def index():
         template_name_or_list='index.html',
         rsp_data={
             'ldap_domain': os.getenv('LDAP_SERVER_DOMAIN'),
-            'ldap_username': session.get('ldap_username')
+            'ldap_username': session.get('ldap_username'),
         }
     )
 
@@ -77,8 +105,8 @@ def logout():
     )
 
 
-@app.route('/list', methods=["GET"])
-def list_object():
+@app.route('/api/list', methods=["GET"])
+def api_list_object():
     _entries = list()
     try:
         with LdapCtl(
@@ -96,8 +124,8 @@ def list_object():
     return jsonify(_entries)
 
 
-@app.route('/tree', methods=["GET"])
-def list_tree():
+@app.route('/api/tree', methods=["GET"])
+def api_list_tree():
     node_tree = list()
     try:
         with LdapCtl(
@@ -140,8 +168,8 @@ def list_tree():
     return jsonify(node_tree)
 
 
-@app.route('/get', methods=["GET"])
-def get_object():
+@app.route('/api/get', methods=["GET"])
+def api_get_object():
     """
 
     :return:
@@ -158,16 +186,17 @@ def get_object():
                 ldap_pass=session.get('ldap_password')
         ) as ldap_ctl:
             obj_detail = ldap_ctl.get_object(search_base=obj_dn)
+            session['ldap_current_dn'] = obj_dn
     except Exception as e:
         logging.error(e)
     return jsonify(obj_detail)
 
 
-@app.route('/add', methods=["POST"])
-def add_object():
-    obj_dn = request.form.get('dn')
+@app.route('/api/add', methods=["POST"])
+def api_add_object():
+    obj_dn = '%s=%s,%s' % (request.form.get('rdnKey'), request.form.get('rdnValue'), request.form.get('baseDn'))
     obj_class = request.form.get('objectClass')
-    obj_attr = request.form.get('attributes')
+    obj_attr = formatLdapAttributes(request.form)
     obj_detail = dict()
     logging.info('%s add new object %s' % (session.get('ldap_username'), obj_dn))
     try:
@@ -183,18 +212,26 @@ def add_object():
                 object_class=obj_class,
                 attributes=obj_attr
             )
-            obj_detail = ldap_ctl.get_object(search_base=obj_dn)
+            # obj_detail = ldap_ctl.get_object(search_base=obj_dn)
+            session['ldap_current_dn'] = obj_dn
     except Exception as e:
         logging.error(e)
-    return jsonify(obj_detail)
+    # return jsonify(obj_detail)
+    return redirect(location='/')
 
 
-@app.route('/update', methods=["POST"])
-def update_object():
+@app.route('/api/update', methods=["POST"])
+def api_update_object():
+    logging.debug('Form: %s' % request.form)
     obj_dn = request.form.get('dn')
-    obj_attr = request.form.get('attributes')
-    obj_detail = dict()
+    obj_attr = formatLdapAttributes(request.form)
+    # for attrKey, attrValue in request.form.items():
+    #     if isLdapAattribute(attrKey):
+    #         logging.debug('Found attribute %s in form' % attrKey)
+    #         obj_attr[attrKey] = attrValue.split(',')
+    # obj_detail = dict()
     logging.info('%s update object %s' % (session.get('ldap_username'), obj_dn))
+    logging.debug('%s' % obj_attr)
     try:
         with LdapCtl(
                 ldap_host=os.getenv('LDAP_SERVER_HOST'),
@@ -207,15 +244,15 @@ def update_object():
                 dn=obj_dn,
                 attributes=obj_attr
             )
-            obj_detail = ldap_ctl.get_object(search_base=obj_dn)
+            session['ldap_current_dn'] = obj_dn
     except Exception as e:
         logging.error(e)
-    return jsonify(obj_detail)
+    return redirect(location='/')
 
 
 @app.route('/delete', methods=["POST"])
 def delete_object():
-    obj_dn = request.form.get('dn')
+    obj_dn = request.values.get("dn")
     logging.info('%s delete object %s' % (session.get('ldap_username'), obj_dn))
     try:
         with LdapCtl(
@@ -228,11 +265,12 @@ def delete_object():
             ldap_ctl.delete_object(dn=obj_dn)
     except Exception as e:
         logging.error(e)
-    return True
+        return False
+    return redirect(location='/')
 
 
-@app.route('/move', methods=["POST"])
-def move_object():
+@app.route('/api/move', methods=["POST"])
+def api_move_object():
     obj_dn = request.form.get('dn')
     obj_cn = obj_dn.split(',')[0]
     target_parent_dn = request.form.get('target_parent_dn')
@@ -253,7 +291,8 @@ def move_object():
             obj_detail = ldap_ctl.get_object(search_base='%s,%s' % (obj_cn, target_parent_dn))
     except Exception as e:
         logging.error(e)
-    return jsonify(obj_detail)
+    # return jsonify(obj_detail)
+    return redirect(location='/')
 
 
 if __name__ == '__main__':

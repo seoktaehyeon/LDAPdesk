@@ -120,14 +120,14 @@ class LdapCtl(object):
         return object_detail
 
     def update_object(self, dn, attributes):
-        attributes_change = dict()
+        attributes_changes = dict()
         for attr_key, attr_value in attributes.items():
-            attributes_change[attr_key] = [(
-                MODIFY_REPLACE, [attr_value]
-            )]
+            if attr_key not in ["dn", "objectClass"]:
+                attributes_changes[attr_key] = [(MODIFY_REPLACE, attr_value)]
+        logging.debug('%s modify replace: %s' % (dn, attributes_changes))
         self.ldap_conn.modify(
             dn=dn,
-            changes=attributes_change
+            changes=attributes_changes
         )
         assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
         return True
@@ -140,16 +140,19 @@ class LdapCtl(object):
 
     def add_object(self, dn, object_class, attributes):
         logging.debug('Add new object: %s' % dn)
+        logging.debug('objectClass: %s' % object_class)
+        logging.debug('attributes: %s' % attributes)
         self.ldap_conn.add(
             dn=dn,
             object_class=object_class,
             attributes=attributes
         )
         assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
+        logging.debug('Succeed to add')
         return True
 
     def delete_object(self, dn):
-        logging.debug('Delete new user: %s' % dn)
+        logging.debug('Delete object: %s' % dn)
         self.ldap_conn.delete(dn=dn)
         assert self.ldap_conn.result.get('result') == 0, '%s' % self.ldap_conn.result.get('description')
         return True

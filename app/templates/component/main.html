@@ -4,25 +4,22 @@
         <span class="text-secondary" id="objectDn">Distinguished Name: </span>
         <div class="row" style="padding-left: 20px; padding-right: 20px;">
             <div class="col text-right">
-                <button class="btn btn-warning btn-sm">New Object</button>
+                <button id="addObject" type="button" class="btn btn-warning btn-sm" onclick="" >New Subobject</button>
             </div>
         </div>
     </div>
     <div class="card-body" style="min-height: 280px;">
-        <form id="objectAttributes" style="padding: 25px;"></form>
+        <form id="objectAttributes" style="padding: 25px; padding-top: -25px;" method="post" action="/update"></form>
     </div>
     <div class="card-footer">
         <div class="row" style="padding-left: 20px; padding-right: 20px;">
             <div class="col">
-                <button class="btn btn-primary btn-sm">Update Object</button>
-                <button class="btn btn-success btn-sm">Add Attribute</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="javascript:submitObject()">Save</button>
+                <button type="button" class="btn btn-success btn-sm" onclick="javascript:addAttribute()">Add Attribute</button>
             </div>
             <div class="col text-right">
-                <button class="btn btn-danger btn-sm">Delete Object</button>
+                <button id="deleteObject" type="button" class="btn btn-danger btn-sm" onclick="">Delete Object</button>
             </div>
         </div>
     </div>
 </div>
-<script type="text/javascript">
-
-</script>
