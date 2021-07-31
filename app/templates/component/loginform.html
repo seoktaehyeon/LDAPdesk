@@ -1,0 +1,14 @@
+<form class="shadow-lg p-3 mb-5 bg-light rounded" method="post" action="/login">
+    <div class="form-row" style="margin: 20px;">
+        <input type="text" class="form-control" placeholder="Domain Component" name="ldap_domain" value="{{ rsp_data.ldap_domain }}" required disabled>
+    </div>
+    <div class="form-row" style="margin: 20px;">
+        <input type="text" class="form-control" placeholder="Common Name" name="ldap_username" required>
+    </div>
+    <div class="form-row" style="margin: 20px;">
+        <input type="password" class="form-control" placeholder="Password" name="ldap_password" required>
+    </div>
+    <div class="form-row" style="margin: 20px;">
+        <button type="submit" class="btn btn-primary" id="authenticate">Authenticate</button>
+    </div>
+</form>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'component/head.html' %}
+<body class="bg-light">
+<div class="container col-12">
+    <div class="row">
+        {% include 'component/header.html' %}
+    </div>
+    <div class="row">
+        <div class="col col-4"></div>
+        <div class="col col-4" style="margin-top: 80px;">
+            {% include 'component/loginform.html' %}
+        </div>
+        <div class="col col-4"></div>
+    </div>
+    <div class="row">
+        {% include 'component/footer.html' %}
+    </div>
+</div>
+</body>
+</html>

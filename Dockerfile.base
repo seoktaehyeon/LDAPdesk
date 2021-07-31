@@ -1,0 +1,4 @@
+# bxwill/ldapdesk:base
+FROM bxwill/python:3.8-flask
+RUN pip install ldap3
+

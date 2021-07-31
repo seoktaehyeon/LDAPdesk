@@ -1,0 +1,169 @@
+<div class="shadow-lg" style="margin-top: 25px; margin-left: 20px;">
+    <div style="padding: 20px;">
+        <span>
+            <img src="/static/icons/person-circle.svg"> {{rsp_data.ldap_username}}
+        </span>
+        <a id="refresh" class="btn btn-outline-dark btn-sm" href="javascript:getTree()">
+            <img src="/static/icons/arrow-clockwise.svg"> Refresh
+        </a>
+        <a id="logout" class="btn btn-outline-dark btn-sm" href="/logout">
+            <img src="/static/icons/door-open.svg"> Logout
+        </a>
+        {% if rsp_data.ldap_dn %}
+        <a id="currentObject" name="{{rsp_data.ldap_dn}}"></a>
+        {% endif %}
+    </div>
+    <div id="ldapTree"></div>
+</div>
+<script type="text/javascript">
+
+    function getTree() {
+        $.get("/api/tree",
+            function (data) {
+                $("#ldapTree").treeview({
+                    data: data,
+                    enableLinks: true,
+                    showBorder: false,
+                    showTags: true,
+                });
+                if($("#currentObject").length == 1) {
+                    var obj_dn = $("#currentObject").name
+                } else {
+                    var obj_dn = data[0].href.split('"')[1];
+                };
+                getObject(object_dn = obj_dn);
+            }
+        );
+    };
+
+    function deleteObject(object_dn) {
+        $.post(
+            "/delete",
+            {
+                dn: object_dn
+            },
+            function (data) {
+                $("#notificationHeader").text("Success");
+                $("#notificationBody").text("Delete object " + object_dn + " success");
+                $("#notification").toast("show");
+                getTree();
+                return true;
+            }
+        )
+    };
+
+    function getObject(object_dn) {
+        $.get(
+            "/api/get?dn=" + object_dn,
+            function (data, status) {
+                console.log('Data DN is ' + data.dn);
+                console.log('Data Attributes is ' + data.attributes);
+                // console.log('Status should be success');
+                if(data.dn == undefined) {
+                    // console.log('Status is ' + status);
+                    $("#notification").toast("show");
+                    return false;
+                };
+                $("#objectName").text(data.dn.split(",")[0].split("=")[1]);
+                $("#objectDn").text('Distinguished Name: ' + data.dn);
+                $("#objectAttributes").text("");
+                $("#objectAttributes").append(
+                    '<input type="hidden" class="form-control col-sm-8" id="dn" name="dn" value="' + data.dn + '">' +
+                    '<button id="submit" type="submit" class="fade">submit</button>'
+                );
+                for (var key in data.attributes) {
+                    console.log(key);
+                    console.log(data.attributes[key]);
+                    $("#objectAttributes").append(
+                        '<div class="form-group row">' +
+                        '  <label for="' + key + '" class="col-form-label col-sm-3 text-right">' + key + '</label>' +
+                        '  <input type="text" class="form-control form-control-sm col-sm-8" name="' + key + '" value="' + data.attributes[key] + '">' +
+                        '</div>'
+                    );
+                };
+                $("#addObject").removeAttr("disabled");
+                $("#addObject").attr("onclick", "javascript:addObject('" + data.dn +"')");
+                $("#deleteObject").removeAttr("disabled");
+                $("#deleteObject").attr("onclick", "javascript:deleteObject('" + data.dn +"')");
+                $("#objectAttributes").attr("action", "/api/update")
+            }
+        );
+        return true;
+    };
+
+    $(document).ready(function () {
+        getTree();
+    });
+
+    function addObject(base_dn) {
+        $("#objectName").text("New Object");
+        $("#objectDn").text('Base DN: ' + base_dn);
+        $("#objectAttributes").text("");
+        $("#objectAttributes").append(
+            '<input type="hidden" class="form-control col-sm-8" name="baseDn" value="' + base_dn + '">' +
+            '<button id="submit" type="submit" class="fade">submit</button>' +
+            '<div class="form-group row">' +
+            '  <label for="objectClass" class="col-form-label col-sm-3 text-right">objectClass</label>' +
+            '  <select name="objectClass" class="custom-select custom-select-sm col-sm-8 required">' +
+            '    <option selected value="inetOrgPerson">inetOrgPerson</option>' +
+            '    <option value="groupOfUniqueNames">groupOfUniqueNames</option>' +
+            '  </select>' +
+            '</div>' +
+            '<div class="form-group row">' +
+            '  <label for="dn" class="col-form-label col-sm-3 text-right">dn</label>' +
+            '  <select name="rdnKey" class="custom-select custom-select-sm col-sm-2">' +
+            '    <option selected value="cn">cn=</option>' +
+            '    <option value="ou">ou=</option>' +
+            '    <option value="uid">uid=</option>' +
+            '  </select>' +
+            '  <input name="rdnValue" type="text" class="form-control form-control-sm col-sm-2">' +
+            '  <input type="text" class="form-control form-control-sm col-sm-4" disabled value=",'+ base_dn +'">' +
+            '</div>'
+        );
+        $("#addObject").attr("disabled", "true");
+        $("#deleteObject").attr("disabled", "true");
+        $("#objectAttributes").attr("action", "/api/add")
+    };
+
+    function addAttribute() {
+        var attributeKeyListId = 'attributeKeyList-' + parseInt(Math.random() * 10000)
+        $("#objectAttributes").append(
+            '<div class="form-group row">' +
+            '  <a class="col-sm-1"></a>' +
+            '  <select class="custom-select custom-select-sm col-sm-2">' +
+            '    <option selected disabled>Select Attribute</option>' +
+            '    <option value="cn">cn</option>' +
+            '    <option value="sn">sn</option>' +
+            '    <option value="uid">uid</option>' +
+            '    <option value="displayName">displayName</option>' +
+            '    <option value="email">email</option>' +
+            '    <option value="userPassword">userPassword</option>' +
+            '    <option value="ou">ou</option>' +
+            '    <option value="uniqueMember">uniqueMember</option>' +
+            '    <option value="description">description</option>' +
+            '  </select>' +
+            '  <input type="text" class="form-control form-control-sm col-sm-8">' +
+            '</div>'
+        );
+    };
+
+    function submitObject() {
+        var obj_dn = $("form #dn").val();
+        var attrKey = $("form select");
+        var attrValue = $("form select").parent().children("input");
+        for(i=0;i<attrKey.length;i++) {
+            if(attrKey[i].name == "rdnKey") {
+                console.log("Skip attribute rdnKey");
+            } else if(attrKey[i].name == "objectClass") {
+                console.log("Skip attribute objectClass");
+            } else if(attrKeyName == "dn") {
+                console.log("Skip attribute dn");
+            } else {
+                var attrKeyName = attrKey[i].value;
+                console.log("Add name=" + attrKeyName + " into <input>");
+                attrValue[i].name = attrKeyName;
+            };
+        };
+        $("#submit").click();
+    };
+</script>
