@@ -11,6 +11,7 @@
 
 #### Screenshot
 ![](app/static/img/LDAPdesk_Login.png)
+![](app/static/img/LDAPdesk_main.png)
 
 #### Environment Variable Default Value
 
